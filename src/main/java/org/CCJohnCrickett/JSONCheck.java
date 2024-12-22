@@ -14,7 +14,7 @@ public class JSONCheck {
     StringBuilder stringBuilder = new StringBuilder();
 
     /// Currently won't set the key5=value5, I need to fix that (I left a quick line down bottom to find where I left off)
-    private final Map<String, Object> JSONKeyValue = new HashMap<>();
+    private final Map<String, Object> JSONKeyValue = new LinkedHashMap<>();
 
     /// Main JSON method for finding the json objects and their values
     public boolean valueOfJSON(File file) {
@@ -52,17 +52,38 @@ public class JSONCheck {
                         collectKV = true;
 
                         while(collectKV) {
-                            if(tokens.contains(currentChar)){
+                            if(tokens.contains(currentChar)) {
                                 String stringValue = stringBuilder.toString().trim();
                                 value = parseValue(stringValue);
                                 stringBuilder.setLength(0);
                                 collectKV = false;
+                            } else if (Character.isWhitespace(currentChar)) {
+                                currentChar = (char) reader.read();
                             } else {
                                 stringBuilder.append(currentChar);
                                 currentChar = (char) reader.read();
                             }
                         }
                         JSONKeyValue.put(key, value);
+                        break;
+
+                    default:  // Default to handling numbers or other values
+                        if (Character.isDigit(currentChar) || currentChar == '-' || currentChar == '.') {
+                            collectKV = true;
+                            while (collectKV) {
+                                if (tokens.contains(currentChar) || Character.isWhitespace(currentChar)) {
+                                    String stringValue = stringBuilder.toString().trim();
+                                    value = parseValue(stringValue); // Parse the number
+                                    stringBuilder.setLength(0); // Reset StringBuilder
+                                    collectKV = false;
+                                } else {
+                                    stringBuilder.append(currentChar);
+                                    currentChar = (char) reader.read();
+                                }
+
+                            }
+                            JSONKeyValue.put(key, value);
+                        }
                         break;
                 }
 
@@ -85,7 +106,7 @@ public class JSONCheck {
                 /// If end of pair is reached, saves the key and its value to a Map
                 /// Checks if there is a key or value before the comma , or if it's followed by a "}"
                 switch(currentChar) {
-                    case ',':                   /// This part seems to be messing with the setting of key5 and value5 into the Map
+                    case ',':
                         if(key.isEmpty() || lastChar  == ',') {
                             return false;
                         }
