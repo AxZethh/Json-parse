@@ -10,26 +10,27 @@ import java.util.logging.Logger;
 
 public class JSONCheck {
     Logger logger = Logger.getLogger(JSONCheck.class.getName());
-    Set<Character> tokens = Set.of('{', '"',',',':', '}');
+    Set<Character> tokens = Set.of('{', '"',',',':', '}', '[', ']');
     StringBuilder stringBuilder = new StringBuilder();
-
-    /// Currently won't set the key5=value5, I need to fix that (I left a quick line down bottom to find where I left off)
+    boolean keyOrValue = false;
+    int charValue;
+    char currentChar;
+    String key = "";
+    Object value = null;
+    boolean collectKV;
     private final Map<String, Object> JSONKeyValue = new LinkedHashMap<>();
 
     /// Main JSON method for finding the json objects and their values
     public boolean valueOfJSON(File file) {
 
-        String key = "";
-        Object value = null;
-        boolean activeObj = false;
-        boolean keyOrValue = false;
-        boolean collectKV = false;
+        boolean activeObj;
+
         // Step1 to check if the file includes a valid json object aka "{}"
         boolean validObj = false;
         char lastChar = 0;
 
         try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            int charValue;
+
             if(reader.read() == '{') {
                 activeObj = true;
             } else {
@@ -37,7 +38,7 @@ public class JSONCheck {
             }
 
             while((charValue = reader.read()) != -1 && activeObj) {
-                char currentChar = (char) charValue;
+                currentChar = (char) charValue;
 
                 switch(currentChar) {
                     case '"':
@@ -89,19 +90,7 @@ public class JSONCheck {
 
                 /// While collecting is active , runs this loop to collect the key and values.
                 while(collectKV) {
-                    currentChar = (char) reader.read();
-
-                    if (currentChar == '"') {
-                        collectKV = false;
-                        if (key.isEmpty() && !keyOrValue) {
-                            key = stringBuilder.toString();
-                        } else {
-                            value = parseValue(stringBuilder.toString());
-                        }
-                        stringBuilder.setLength(0);
-                    } else {
-                        stringBuilder.append(currentChar);
-                    }
+                    collectKeyValue(reader, this.stringBuilder);
                 }
                 /// If end of pair is reached, saves the key and its value to a Map
                 /// Checks if there is a key or value before the comma , or if it's followed by a "}"
@@ -134,6 +123,7 @@ public class JSONCheck {
 
     /// Parses the Value into it's proper data type, Either a boolean, number ( Double or Integer )  , null value or String.
     private Object parseValue(String value) {
+        System.out.println(value);
         if(value.equals("true") || value.equals("false")) {
             return Boolean.parseBoolean(value);
         }
@@ -153,25 +143,24 @@ public class JSONCheck {
 
     }
 
-//    public void collectKeyValue(boolean collectKV) {
-//        while(collectKV) {
-//            charValue = reader.read();
-//            currentChar = (char) charValue;
-//
-//            if (currentChar == '"') {
-//                collectKV = false;
-//                if (key.isEmpty() && !keyOrValue) {
-//                    key = stringBuilder.toString();
-//                } else {
-//                    value = parseValue(stringBuilder.toString());
-//                }
-//                stringBuilder.setLength(0);
-//            } else {
-//                stringBuilder.append(currentChar);
-//            }
-//        }
-//    }
+    private void collectKeyValue(BufferedReader reader, StringBuilder stringBuilder) throws IOException {
+        while(collectKV) {
+            charValue = reader.read();
+            currentChar = (char) charValue;
 
+            if (currentChar == '"') {
+                collectKV = false;
+                if (key.isEmpty() && !keyOrValue) {
+                    key = stringBuilder.toString();
+                } else {
+                    value = parseValue(stringBuilder.toString());
+                }
+                stringBuilder.setLength(0);
+            } else {
+                stringBuilder.append(currentChar);
+            }
+        }
+    }
 
     public Map<String, Object> getJSONKeyValue() {
         return JSONKeyValue;

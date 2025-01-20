@@ -9,7 +9,7 @@ import java.util.Scanner;
 public class JSON_parser {
     public static void main(String[] args) {
 
-        /// STEP 1 AND 2 ARE DONE!
+        /// STEP 1, 2 AND 3 ARE DONE!
         JSONCheck jsonCheck = new JSONCheck();
         System.out.println("Please enter your file Location: ");
         Scanner scanner = new Scanner(System.in);
